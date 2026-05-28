@@ -71,7 +71,7 @@ function Layout() {
               <Route
                 path="/dashboard"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute >
                     <Dashboard />
                   </ProtectedRoute>
                 }
@@ -118,6 +118,8 @@ function Layout() {
               <Route path="/terms-condition" element={<Terms />} />
 
               <Route path="/contact-us" element={<Contact />} />
+
+              <Route path="*" element={<Navigate to="/login" replace />} />
             </Routes>
           </motion.div>
         </AnimatePresence>
