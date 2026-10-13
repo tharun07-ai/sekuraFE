@@ -12,15 +12,11 @@ function Signup() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [reEnter, setReEnter] = useState("");
-  const [otp, setOtp] = useState("");
-  const [otpSent, setOtpSent] = useState(false);
-  const [otpVerified, setOtpVerified] = useState(false);
   const [loading, setLoading] = useState(false);
   const [emailError, setEmailError] = useState("");
   const [nameError, setNameError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [rePasswordError, setRePasswordError] = useState("");
-  const [otpError, setOtpError] = useState("");
 
   const validateEmail = (emailValue) => {
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -34,57 +30,32 @@ function Signup() {
     return true;
   };
 
-  const sendOTP = async () => {
+  const handleSignup = async () => {
+    setNameError("");
+    setEmailError("");
+    setPasswordError("");
+    setRePasswordError("");
+
+    if (!name || name.trim().length < 3) {
+      setNameError("Name must contain minimum 3 characters");
+      return;
+    }
+
     if (!validateEmail(email)) {
       return;
     }
 
-    setLoading(true);
-
-    try {
-      await api.post("/send-otp", {
-        Email: email,
-      });
-
-      setOtpSent(true);
-    } catch (error) {
-      if (error.response) {
-        setEmailError(error.response.data.message);
-      } else {
-        setEmailError("Server Error");
-      }
-    } finally {
-      setLoading(false);
+    if (!password) {
+      setPasswordError("Password is required");
+      return;
     }
-  };
 
-  const verifyOTP = async () => {
-    setLoading(true);
-
-    try {
-      await api.post("/verify-otp", {
-        Email: email,
-        OTP: otp,
-      });
-
-      setOtpVerified(true);
-      setOtpError("");
-    } catch (error) {
-      if (error.response) {
-        setOtpError(error.response.data.message);
-      } else {
-        setOtpError("Server Error");
-      }
-    } finally {
-      setLoading(false);
+    if (password !== reEnter) {
+      setRePasswordError("Passwords do not match");
+      return;
     }
-  };
 
-  const handleSignup = async () => {
     setLoading(true);
-    setNameError("");
-    setPasswordError("");
-    setRePasswordError("");
 
     try {
       const response = await api.post("/newUser", {
@@ -100,7 +71,7 @@ function Signup() {
       navigate("/dashboard", { replace: true });
     } catch (error) {
       if (error.response) {
-        const message = error.response.data.message;
+        const message = error.response.data?.message || "Registration failed";
 
         if (message.includes("Name")) {
           setNameError(message);
@@ -108,7 +79,13 @@ function Signup() {
           setRePasswordError(message);
         } else if (message.includes("Password")) {
           setPasswordError(message);
+        } else if (message.includes("Email") || message.includes("email")) {
+          setEmailError(message);
+        } else {
+          setEmailError(message);
         }
+      } else {
+        setEmailError("Server Error");
       }
     } finally {
       setLoading(false);
@@ -156,7 +133,7 @@ function Signup() {
             </p>
 
             <div className="mt-8 grid gap-3">
-              {["Email OTP verification", "Encrypted secret workspace", "Protected request flows"].map((item) => (
+              {["Direct account access", "Encrypted secret workspace", "Protected request flows"].map((item) => (
                 <div key={item} className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white/85 px-4 py-3 shadow-sm dark:border-white/10 dark:bg-white/[0.06]">
                   <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-green-100 text-green-700 dark:bg-green-400/10 dark:text-green-300">
                     <ShieldCheck className="h-4 w-4" />
@@ -272,67 +249,15 @@ function Signup() {
             <p className="text-sm text-red-600 dark:text-red-300">{rePasswordError}</p>
           )}
 
-          {!otpSent && (
-            <button
-              type="button"
-              onClick={sendOTP}
-              disabled={loading}
-              className={primaryButton}
-            >
-              {loading ? "Sending OTP..." : "Send OTP"}
-              {!loading && <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />}
-            </button>
-          )}
-
-          {otpSent && !otpVerified && (
-            <div className="space-y-4">
-              <div>
-                <input
-                  type="text"
-                  placeholder="Enter OTP"
-                  value={otp}
-                  onChange={(e) => {
-                    setOtp(e.target.value);
-                    setOtpError("");
-                  }}
-                  className={inputClass}
-                />
-
-                {otpError && (
-                  <p className="mt-2 text-sm text-red-600 dark:text-red-300">{otpError}</p>
-                )}
-              </div>
-
-              <button
-                type="button"
-                onClick={verifyOTP}
-                disabled={loading}
-                className={primaryButton}
-              >
-                {loading ? "Verifying..." : "Verify OTP"}
-              </button>
-            </div>
-          )}
-
-          {otpVerified && (
-            <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-center dark:border-emerald-300/25 dark:bg-emerald-300/10">
-              <p className="font-medium text-green-700 dark:text-emerald-200">
-                Email Verified Successfully
-              </p>
-            </div>
-          )}
-
-          {otpVerified && (
-            <button
-              type="button"
-              onClick={handleSignup}
-              disabled={loading}
-              className={primaryButton}
-            >
-              {loading ? "Creating Account..." : "Signup"}
-              {!loading && <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />}
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={handleSignup}
+            disabled={loading}
+            className={primaryButton}
+          >
+            {loading ? "Creating Account..." : "Signup"}
+            {!loading && <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />}
+          </button>
 
           <p className="pt-2 text-center text-sm text-slate-500 dark:text-slate-400">
             Already have an account?{" "}
